@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+<head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data: blob:; font-src data:; media-src data: blob:; base-uri 'none'; form-action 'none'">
+<meta charset="utf-8">
+<title>GuildForge</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    background: linear-gradient(135deg,#1b1032,#2a1a4a); color:#eee; width:1280px; height:720px; overflow:hidden;
+  }
+  .app { padding: 24px 40px; }
+  header { display:flex; align-items:center; gap:18px; margin-bottom:18px; }
+  .logo { font-size:26px; font-weight:700; color:#f4c95d; }
+  .tagline { font-size:14px; color:#bba7d8; flex:1; }
+  header button {
+    background:#7c4dff; color:#fff; border:none; padding:10px 16px; border-radius:8px; cursor:pointer; font-size:13px; font-weight:600;
+  }
+  header button:hover { background:#9568ff; }
+  .guild-card, .members, .payout-panel, .badge-detail, #public {
+    background: rgba(255,255,255,0.06); border-radius:14px; padding:18px 22px; margin-bottom:16px;
+  }
+  .guild-card h2, #public h2 { margin:0 0 6px 0; color:#fff; }
+  .guild-card p, #public p { margin:0 0 14px 0; color:#c6b8e3; font-size:13px; }
+  .actions button {
+    background:#3fd0b0; color:#102a22; border:none; padding:10px 18px; border-radius:8px; margin-right:10px;
+    font-weight:700; cursor:pointer; font-size:13px;
+  }
+  .actions button:hover { background:#5be0c2; }
+  .toast {
+    margin-top:12px; background:#2f8f5a; color:#fff; padding:8px 12px; border-radius:8px; font-size:13px; display:inline-block;
+  }
+  .members { display:flex; gap:14px; }
+  .member {
+    flex:1; background:rgba(255,255,255,0.08); border-radius:10px; padding:12px; cursor:pointer;
+    display:flex; flex-direction:column; gap:4px; transition:none;
+  }
+  .member:hover { background:rgba(255,255,255,0.14); }
+  .member .name { font-weight:700; color:#f4c95d; }
+  .member .points { font-size:13px; color:#cfe; }
+  .member .badges { font-size:13px; }
+  .badge-detail h3, .payout-panel h3 { margin-top:0; color:#f4c95d; font-size:15px; }
+  .badge-detail p, .payout-panel p { font-size:13px; color:#ddd; }
+  .bar { display:flex; height:40px; border-radius:8px; overflow:hidden; font-size:12px; color:#102a22; font-weight:700; }
+  .seg { display:flex; align-items:center; justify-content:center; }
+  .seg.alice { background:#f4c95d; }
+  .seg.bob { background:#3fd0b0; }
+  .seg.carys { background:#b39bff; }
+  footer { position:fixed; bottom:8px; left:40px; font-size:11px; color:#8873b3; }
+  #public .note { font-size:12px; color:#9c8ec9; margin-top:10px; }
+</style>
+</head>
+<body>
+<div class="app" data-demo="app">
+  <header>
+    <div class="logo">⚒️ GuildForge</div>
+    <div class="tagline">On-chain reputation &amp; auto-payout for gaming &amp; DAO guilds</div>
+    <button id="toggleViewBtn" data-demo="btn-public-profile" onclick="toggleView()">View Public Profile</button>
+  </header>
+
+  <main id="dashboard" data-demo="view-dashboard">
+    <section class="guild-card">
+      <h2>Shadow Wolves Guild</h2>
+      <p>5 members · Solana · Treasury: 10 SOL incoming</p>
+      <div class="actions">
+        <button data-demo="btn-log-contribution" onclick="logContribution()">Log Contribution</button>
+        <button data-demo="btn-run-payout" onclick="togglePayout()">Run Payout Split</button>
+      </div>
+      <div class="toast" id="toast" data-demo="toast" hidden></div>
+    </section>
+
+    <section class="members">
+      <div class="member" data-demo="member-alice" id="member-alice" onclick="toggleBadge()">
+        <span class="name">Alice</span>
+        <span class="points" id="alice-points">120 pts</span>
+        <span class="badges" id="alice-badges">🏅 x3</span>
+      </div>
+      <div class="member">
+        <span class="name">Bob</span>
+        <span class="points">80 pts</span>
+        <span class="badges">🏅 x2</span>
+      </div>
+      <div class="member">
+        <span class="name">Carys</span>
+        <span class="points">60 pts</span>
+        <span class="badges">🏅 x1</span>
+      </div>
+    </section>
+
+    <section class="badge-detail" id="badge-detail" data-demo="badge-detail" hidden>
+      <h3>Alice — Soulbound Reputation NFTs</h3>
+      <p>🏅 Raid Win ×2 &nbsp; 🏅 Bug Fix ×1 &nbsp; <span id="new-badge-text"></span></p>
+    </section>
+
+    <section class="payout-panel" id="payout-panel" data-demo="payout-panel" hidden>
+      <h3>Automated Payout Split (Incoming: 10 SOL)</h3>
+      <p>Proportional to on-chain contribution score — auto-executed by the Solana program.</p>
+      <div class="bar">
+        <div class="seg alice" style="width:46%">Alice 46% · 4.6 SOL</div>
+        <div class="seg bob" style="width:31%">Bob 31% · 3.1 SOL</div>
+        <div class="seg carys" style="width:23%">Carys 23% · 2.3 SOL</div>
+      </div>
+    </section>
+  </main>
+
+  <main id="public" data-demo="view-public" hidden>
+    <h2>Public Guild Profile — Shadow Wolves Guild</h2>
+    <p>Verified on-chain reputation history. No login required.</p>
+    <div class="members">
+      <div class="member"><span class="name">Alice</span><span class="points" id="public-alice-points">120 pts</span><span class="badges" id="public-alice-badges">🏅 x3</span></div>
+      <div class="member"><span class="name">Bob</span><span class="points">80 pts</span><span class="badges">🏅 x2</span></div>
+      <div class="member"><span class="name">Carys</span><span class="points">60 pts</span><span class="badges">🏅 x1</span></div>
+    </div>
+    <p class="note">Anyone can verify contributions and payouts via the Solana explorer.</p>
+  </main>
+
+  <footer>Prototype — all data is simulated</footer>
+</div>
+
+<script>
+  let alicePoints = 120, aliceBadges = 3;
+
+  function logContribution() {
+    alicePoints += 10;
+    aliceBadges += 1;
+    document.getElementById('alice-points').textContent = alicePoints + ' pts';
+    document.getElementById('alice-badges').textContent = '🏅 x' + aliceBadges;
+    document.getElementById('public-alice-points').textContent = alicePoints + ' pts';
+    document.getElementById('public-alice-badges').textContent = '🏅 x' + aliceBadges;
+    document.getElementById('new-badge-text').textContent = '🏅 New: Raid Win (soulbound, non-transferable)';
+    const toast = document.getElementById('toast');
+    toast.hidden = false;
+    toast.textContent = '✅ Contribution logged: Alice +1 Raid Win — reputation NFT minted';
+  }
+
+  function toggleBadge() {
+    const el = document.getElementById('badge-detail');
+    el.hidden = !el.hidden;
+  }
+
+  function togglePayout() {
+    const el = document.getElementById('payout-panel');
+    el.hidden = !el.hidden;
+  }
+
+  function toggleView() {
+    const dash = document.getElementById('dashboard');
+    const pub = document.getElementById('public');
+    const btn = document.getElementById('toggleViewBtn');
+    if (dash.hidden) {
+      dash.hidden = false; pub.hidden = true; btn.textContent = 'View Public Profile';
+    } else {
+      dash.hidden = true; pub.hidden = false; btn.textContent = 'Back to Dashboard';
+    }
+  }
+</script>
+</body>
+</html>
